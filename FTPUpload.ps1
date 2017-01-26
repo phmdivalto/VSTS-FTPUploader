@@ -48,6 +48,49 @@ try {
 
 Import-Module -force "$PSScriptRoot\library\PSFTP.psm1"
 
+function Reverse ()
+{
+    $arr = $input | ForEach-Object { $_ }
+    [array]::Reverse($arr)
+    return $arr
+}
+
+function Clean-Compare () {
+    Write-Host "Starting Clean-Compare..."
+
+    $localItemsCollection = @()
+    $localFolderChildren = Get-ChildItem -Path $sourcePath -Recurse | Select-Object FullName
+    $localFolderChildren | foreach {
+        $localItemsCollection += $_.FullName.Replace($sourcePath, "").SubString(1)
+    }
+        
+    $ftpItemsCollection = @()
+    $ftpFolderChildren = Get-FTPChildItem -Session $Session -Path $remotePath -Recurse | Select-Object FullName
+    $ftpFolderChildren | foreach {
+        $temp = $_.FullName.Replace($serverName+$remotePath, "").Replace("/","\")
+        if ($temp.IndexOf("\") -eq 0) {
+            $ftpItemsCollection += $temp.SubString(1)
+        }
+        else {
+            $ftpItemsCollection += $temp
+        }
+    }
+    
+    $ChildrenDiffs = Compare-Object -ReferenceObject $localItemsCollection -DifferenceObject $ftpItemsCollection
+    $ChildrenDiffs | Reverse | foreach {
+        if ($_.SideIndicator -eq "=>") {
+            $ftpFileToDelete = ($serverName+$remotePath+$_.InputObject).Replace("\","/")
+            if (($_.InputObject -in "app_offline.htm", "Config.Projects", "logs", "TemporaryFiles", "web.config") -or ($_.InputObject -Like "key-*.xml")) {
+                Write-Host ("->Not Remove File: "+$ftpFileToDelete)
+            }
+            else {
+                #Write-Host ("->Delete File: "+$ftpFileToDelete)
+                Remove-FTPItem -Session $Session -Path $ftpFileToDelete
+            }
+        }
+    }
+}
+
 function IsDeploymentFile($name) {
     
     if ($name.ToLower().StartsWith('/obj/') -eq $true) {
@@ -98,12 +141,15 @@ if ([string]::IsNullOrEmpty($username) -eq $false) {
 
 }
 
+Write-Host "Creating App_Offline.htm file..."
+Add-FTPItem -Path $remotePath -LocalPath "D:\Agent\app_offline.htm" -Overwrite -RemoteFileName "app_offline.htm"
 
 # If flag is set - old destination files are deleted.
 if ($deleteOldFiles -eq $true) {
     #Remove-FTPDirectory -path $remotePath -Session $Session
-    Remove-FTPItem -Session $Session -Path $remotePath -Recurse 
-    Add-FTPDirectory -path $remotePath
+    #Remove-FTPItem -Session $Session -Path $remotePath -Recurse 
+    #Add-FTPDirectory -path $remotePath
+    Clean-Compare
 }
 
 Write-Host "Creating directories..."
@@ -116,20 +162,20 @@ foreach($dir in (Get-ChildItem -Recurse -path "$sourcePath" | ?{ $_.PSIsContaine
     if ($deploymentFilesOnly -eq $true) {
             if (IsDeploymentFile($directory) -eq $true) {
                 Write-Host $directory
-                if ($deleteOldFiles -eq $true) {
-                    Add-FTPDirectory -path $remotePath -NewFolder $directory
-                } else {
+                #if ($deleteOldFiles -eq $true) {
+                #    Add-FTPDirectory -path $remotePath -NewFolder $directory
+                #} else {
                     Add-FTPDirectory -path $remotePath -NewFolder $directory -SuppressErrors $true
-                }
+                #}
             }
     } else {
         Write-Host $directory
 
-        if ($deleteOldFiles -eq $true) {
-            Add-FTPDirectory -path $remotePath -NewFolder $directory
-        } else {
+        #if ($deleteOldFiles -eq $true) {
+        #    Add-FTPDirectory -path $remotePath -NewFolder $directory
+        #} else {
             Add-FTPDirectory -path $remotePath -NewFolder $directory -SuppressErrors $true
-        }
+        #}
 
     }
 }
@@ -163,4 +209,5 @@ foreach($item in $fileList){
 
 } 
 
-
+Write-Host "Removing App_Offline.htm file..."
+Remove-FTPItem -Session $Session -Path "app_offline.htm"
