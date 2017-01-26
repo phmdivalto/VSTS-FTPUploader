@@ -15,9 +15,14 @@ The task is based on the [PowerShell FTP Client Module](https://gallery.technet.
  - Deploy only the deployment files. 
  Certain files and folders are then excluded like *.vb and *.cs and more.
  - Delete old files
- Deletes all the existing files on the FTP server before uploading.
+ On the FTP server, deletes the files/folders which do not exist in the local folder.
 
 ## Change Log
+Version: 1.0.25 - 26th of January 2017
+- Use System.Net.WebProxy.
+- Add file marker : App_Offline.htm.
+- Change delete old files : on the FTP server, deletes the files/folders which do not exist in the local folder.
+
 Version: 1.0.24 - 8th of Febuary 2016
 - Parameter bug fix in connection with the new 'Use binary' feature.
 
@@ -75,7 +80,7 @@ If there are files or filetypes that you do not want to deploy, you can specify 
 The string is comma seperated values. To read more, see the [-Exclude parameter section](https://technet.microsoft.com/en-us/library/hh849800.aspx) of this whitepaper.
 
 - **Delete old Files** (Default: True)
-If checked, files and folders inside the Remote Path will be deleted before uploading.
+If checked, files and folders inside the Remote Path will be deleted (only those which do not exist in the local folder).
 Uploading without this checked will overwrite existing files on the 'Remote Path'.
 
 - **Publish only deployment files** 
