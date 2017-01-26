@@ -86,6 +86,7 @@
 			
 			Write-Verbose "Create FtpWebRequest object."
 			[System.Net.FtpWebRequest]$Request = [System.Net.WebRequest]::Create($Server)
+			$Request.Proxy = New-Object -TypeName System.Net.WebProxy;
 			$Request.Credentials = $Credentials
 			$Request.EnableSsl = $EnableSsl
 			$Request.KeepAlive = $KeepAlive

@@ -88,6 +88,7 @@
 		if ($pscmdlet.ShouldProcess($RequestUri,"Rename item to: '$NewName' in ftp location")) 
 		{	
 			[System.Net.FtpWebRequest]$Request = [System.Net.WebRequest]::Create($RequestUri)
+			$Request.Proxy = New-Object -TypeName System.Net.WebProxy;
 			$Request.Credentials = $CurrentSession.Credentials
 			$Request.EnableSsl = $CurrentSession.EnableSsl
 			$Request.KeepAlive = $CurrentSession.KeepAlive

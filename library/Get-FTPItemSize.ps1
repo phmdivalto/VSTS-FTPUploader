@@ -81,6 +81,7 @@
 		if ($pscmdlet.ShouldProcess($RequestUri,"Get item size")) 
 		{	
 			[System.Net.FtpWebRequest]$Request = [System.Net.WebRequest]::Create($RequestUri)
+			$Request.Proxy = New-Object -TypeName System.Net.WebProxy;
 			$Request.Credentials = $CurrentSession.Credentials
 			$Request.EnableSsl = $CurrentSession.EnableSsl
 			$Request.KeepAlive = $CurrentSession.KeepAlive
